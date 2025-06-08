@@ -1,10 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState,useTransition } from "react"
 import { motion } from "framer-motion"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { GripVertical, Edit2, Check, X, ArrowLeft, ArrowRight, Plus } from "lucide-react"
 import type { AppState } from "@/app/page"
+import {generateOutlineServerAction} from '@/lib/action'
+
+
+
+
 
 interface OutlineStepProps {
   onNext: () => void
@@ -17,97 +22,25 @@ export default function OutlineStep({ onNext, onPrev, appState, updateAppState }
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState("")
   const [isGenerating, setIsGenerating] = useState(true)
+   const [isPending, startTransition] = useTransition()
+
 
   useEffect(() => {
-    // Simulate outline generation
-    const generateOutline = () => {
-      const outlineTemplates = {
-        invoice: [
-          {
-            id: "1",
-            title: "Header & Company Information",
-            content: "Company details, logo, contact information",
-            hasImages: false,
-          },
-          { id: "2", title: "Client Information", content: "Billing address and client details", hasImages: false },
-          { id: "3", title: "Invoice Details", content: "Invoice number, date, due date", hasImages: false },
-          {
-            id: "4",
-            title: "Itemized Services/Products",
-            content: "Description, quantity, rate, amount",
-            hasImages: false,
-          },
-          {
-            id: "5",
-            title: "Total & Payment Terms",
-            content: "Subtotal, taxes, total amount, payment instructions",
-            hasImages: false,
-          },
-        ],
-        "word-doc": [
-          { id: "1", title: "Introduction", content: "Opening statement and purpose", hasImages: false },
-          { id: "2", title: "Main Content", content: "Core information and key points", hasImages: false },
-          { id: "3", title: "Supporting Details", content: "Additional context and examples", hasImages: false },
-          { id: "4", title: "Conclusion", content: "Summary and closing remarks", hasImages: false },
-        ],
-        assignment: [
-          { id: "1", title: "Title Page", content: "Assignment title, student name, course, date", hasImages: false },
-          { id: "2", title: "Introduction", content: "Topic introduction and thesis statement", hasImages: false },
-          { id: "3", title: "Literature Review", content: "Research and background information", hasImages: false },
-          { id: "4", title: "Main Arguments", content: "Key points and supporting evidence", hasImages: false },
-          {
-            id: "5",
-            title: "Analysis & Discussion",
-            content: "Critical analysis and interpretation",
-            hasImages: false,
-          },
-          { id: "6", title: "Conclusion", content: "Summary and final thoughts", hasImages: false },
-          { id: "7", title: "References", content: "Bibliography and citations", hasImages: false },
-        ],
-        report: [
-          { id: "1", title: "Executive Summary", content: "Brief overview of key findings", hasImages: false },
-          { id: "2", title: "Introduction", content: "Purpose, scope, and methodology", hasImages: false },
-          { id: "3", title: "Findings", content: "Data analysis and key discoveries", hasImages: false },
-          { id: "4", title: "Discussion", content: "Interpretation of results", hasImages: false },
-          { id: "5", title: "Recommendations", content: "Suggested actions and next steps", hasImages: false },
-          { id: "6", title: "Appendices", content: "Supporting documents and data", hasImages: false },
-        ],
-      }
-
-      setTimeout(() => {
-        let outline = outlineTemplates[appState.documentType!] || outlineTemplates["word-doc"]
-
-        // Add image information to sections
-        outline = outline.map((section) => {
-          const sectionImages = appState.images.filter((img) => {
-            const sectionKey = section.title.toLowerCase().replace(/[^a-z0-9]/g, "-")
-            return (
-              img.position === sectionKey ||
-              (img.position === "introduction" && section.title.toLowerCase().includes("introduction")) ||
-              (img.position === "main-content" && section.title.toLowerCase().includes("main")) ||
-              (img.position === "supporting-details" && section.title.toLowerCase().includes("supporting")) ||
-              (img.position === "conclusion" && section.title.toLowerCase().includes("conclusion"))
-            )
-          })
-
-          return {
-            ...section,
-            hasImages: sectionImages.length > 0,
-            imageCount: sectionImages.length,
-            content:
-              sectionImages.length > 0
-                ? `${section.content} (${sectionImages.length} image${sectionImages.length > 1 ? "s" : ""} included)`
-                : section.content,
-          }
-        })
-
-        updateAppState({ outline })
-        setIsGenerating(false)
-      }, 2000)
-    }
+    
+ 
+  const handleGenerate = async() => {
+    startTransition(async () => {
+      const result = await generateOutlineServerAction({
+        documentType: appState.documentType!,
+        basicIdea: appState.basicIdea,
+        images: appState.images,
+      })
+      updateAppState({ outline: result })
+    })
+  }
 
     if (appState.outline.length === 0) {
-      generateOutline()
+      handleGenerate()
     } else {
       setIsGenerating(false)
     }
@@ -223,7 +156,7 @@ export default function OutlineStep({ onNext, onPrev, appState, updateAppState }
                                     <h3 className="text-lg font-semibold text-white">
                                       {index + 1}. {item.title}
                                     </h3>
-                                    {item.imageCount > 0 && (
+                                    {item.imageCount! > 0 && (
                                       <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full border border-blue-500/30">
                                         📷 {item.imageCount}
                                       </span>
