@@ -5,10 +5,7 @@ import { motion } from "framer-motion"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { GripVertical, Edit2, Check, X, ArrowLeft, ArrowRight, Plus } from "lucide-react"
 import type { AppState } from "@/app/page"
-import {generateOutlineServerAction} from '@/lib/action'
-
-
-
+import {generateOutlineServerAction} from '@/lib/outline-generation'
 
 
 interface OutlineStepProps {

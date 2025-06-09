@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Download, MessageCircle, Send, ArrowLeft, RefreshCw, FileText } from "lucide-react"
 import type { AppState } from "@/app/page"
+import { sendChatMessage } from "@/lib/action"
 
 interface GenerationStepProps {
   onPrev: () => void
@@ -16,6 +17,103 @@ interface ChatMessage {
   type: "user" | "ai"
   content: string
   timestamp: Date
+}
+
+// Document templates for different types
+const DOCUMENT_TEMPLATES = {
+  assignment: {
+    sections: [
+      { title: "Introduction", content: "Provide an overview of the assignment topic and objectives." },
+      { title: "Literature Review", content: "Review relevant sources and existing research on the topic." },
+      { title: "Methodology", content: "Describe the approach and methods used for this assignment." },
+      { title: "Analysis", content: "Present your analysis and findings." },
+      { title: "Discussion", content: "Discuss the implications and significance of your findings." },
+      { title: "Conclusion", content: "Summarize key points and provide final thoughts." },
+      { title: "References", content: "List all sources cited in the assignment." },
+    ],
+    structure: `ASSIGNMENT DOCUMENT
+
+EXECUTIVE SUMMARY
+{basicIdea}
+
+KEY POINTS
+{textPoints}
+
+{sections}
+
+CONCLUSION
+This assignment provides a comprehensive analysis of the topic with thorough research and critical evaluation.`,
+  },
+  report: {
+    sections: [
+      { title: "Executive Summary", content: "Brief overview of the report's key findings and recommendations." },
+      { title: "Background", content: "Context and background information relevant to the report." },
+      { title: "Findings", content: "Detailed presentation of research findings and data." },
+      { title: "Analysis", content: "Analysis and interpretation of the findings." },
+      { title: "Recommendations", content: "Actionable recommendations based on the analysis." },
+      { title: "Implementation", content: "Steps for implementing the recommendations." },
+    ],
+    structure: `REPORT DOCUMENT
+
+EXECUTIVE SUMMARY
+{basicIdea}
+
+KEY POINTS
+{textPoints}
+
+{sections}
+
+CONCLUSION
+This report provides comprehensive insights and actionable recommendations for consideration.`,
+  },
+  proposal: {
+    sections: [
+      { title: "Project Overview", content: "Overview of the proposed project and its objectives." },
+      { title: "Problem Statement", content: "Clear definition of the problem or opportunity being addressed." },
+      { title: "Proposed Solution", content: "Detailed description of the proposed solution or approach." },
+      { title: "Timeline", content: "Project timeline with key milestones and deliverables." },
+      { title: "Budget", content: "Estimated costs and resource requirements." },
+      { title: "Expected Outcomes", content: "Anticipated results and benefits of the project." },
+    ],
+    structure: `PROPOSAL DOCUMENT
+
+EXECUTIVE SUMMARY
+{basicIdea}
+
+KEY POINTS
+{textPoints}
+
+{sections}
+
+CONCLUSION
+This proposal outlines a comprehensive plan to address the identified needs and deliver measurable results.`,
+  },
+  "research-paper": {
+    sections: [
+      {
+        title: "Abstract",
+        content: "Concise summary of the research paper including objectives, methods, and key findings.",
+      },
+      { title: "Introduction", content: "Introduction to the research topic and research questions." },
+      { title: "Literature Review", content: "Review of existing research and theoretical framework." },
+      { title: "Methodology", content: "Research design, data collection, and analysis methods." },
+      { title: "Results", content: "Presentation of research findings and data analysis." },
+      { title: "Discussion", content: "Interpretation of results and their implications." },
+      { title: "Conclusion", content: "Summary of findings and suggestions for future research." },
+    ],
+    structure: `RESEARCH PAPER
+
+ABSTRACT
+{basicIdea}
+
+KEY RESEARCH POINTS
+{textPoints}
+
+{sections}
+
+CONCLUSION
+This research contributes to the existing body of knowledge and provides insights for future studies.`,
+  },
 }
 
 export default function GenerationStep({ onPrev, appState, updateAppState }: GenerationStepProps) {
@@ -76,83 +174,258 @@ export default function GenerationStep({ onPrev, appState, updateAppState }: Gen
     }
   }, [appState.images])
 
+  // Generate document using templates
+  const generateDocumentWithTemplate = () => {
+    const template = DOCUMENT_TEMPLATES[appState.documentType as keyof typeof DOCUMENT_TEMPLATES]
+
+    if (!template) {
+      // Fallback to original generation logic
+      return generateDocumentWithImages()
+    }
+
+    let documentContent = template.structure
+
+    // Replace placeholders
+    documentContent = documentContent.replace("{basicIdea}", appState.basicIdea)
+
+    // Replace text points
+    const textPointsFormatted = appState.textPoints
+      .filter((point) => point.trim())
+      .map((point, index) => `${index + 1}. ${point}`)
+      .join("\n")
+    documentContent = documentContent.replace("{textPoints}", textPointsFormatted)
+
+    // Replace sections
+    let sectionsContent = ""
+    template.sections.forEach((section) => {
+      sectionsContent += `${section.title.toUpperCase()}\n\n`
+
+      // Add images for this section
+      const sectionImages = appState.images.filter((img) => {
+        const sectionKey = section.title.toLowerCase().replace(/[^a-z0-9]/g, "-")
+        return (
+          img.position === sectionKey ||
+          (img.position === "introduction" && section.title.toLowerCase().includes("introduction")) ||
+          (img.position === "main-content" && section.title.toLowerCase().includes("main")) ||
+          (img.position === "supporting-details" && section.title.toLowerCase().includes("supporting")) ||
+          (img.position === "conclusion" && section.title.toLowerCase().includes("conclusion"))
+        )
+      })
+
+      if (sectionImages.length > 0) {
+        sectionsContent += "--- Images in this section ---\n"
+        sectionImages.forEach((img) => {
+          sectionsContent += `IMAGE:${img.id}:${img.file.name}:${img.description || "No description provided"}\n`
+        })
+        sectionsContent += "\n"
+      }
+
+      sectionsContent += `${section.content}\n\n`
+      sectionsContent += `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\n`
+    })
+
+    documentContent = documentContent.replace("{sections}", sectionsContent)
+
+    // Add top and bottom images
+    const topImages = appState.images.filter((img) => img.position === "top")
+    if (topImages.length > 0) {
+      let topImagesContent = "=== IMAGES ===\n"
+      topImages.forEach((img) => {
+        topImagesContent += `IMAGE:${img.id}:${img.file.name}:${img.description || "No description"}\n`
+      })
+      topImagesContent += "\n"
+      documentContent = topImagesContent + documentContent
+    }
+
+    const bottomImages = appState.images.filter((img) => img.position === "bottom")
+    if (bottomImages.length > 0) {
+      documentContent += "=== ADDITIONAL IMAGES ===\n"
+      bottomImages.forEach((img) => {
+        documentContent += `IMAGE:${img.id}:${img.file.name}:${img.description || "No description"}\n`
+      })
+      documentContent += "\n"
+    }
+
+    documentContent += `\n---\nDocument generated by Docgent AI on ${new Date().toLocaleDateString()}\nProfessional Document Generation Platform`
+
+    return documentContent
+  }
+
+  const generateDocumentWithImages = () => {
+    let documentContent = `${appState.documentType?.replace("-", " ").toUpperCase()} DOCUMENT\n\n`
+
+    // Add top images
+    const topImages = appState.images.filter((img) => img.position === "top")
+    if (topImages.length > 0) {
+      documentContent += "=== IMAGES ===\n"
+      topImages.forEach((img) => {
+        documentContent += `IMAGE:${img.id}:${img.file.name}:${img.description || "No description"}\n`
+      })
+      documentContent += "\n"
+    }
+
+    documentContent += `EXECUTIVE SUMMARY\n${appState.basicIdea}\n\n`
+
+    documentContent += `KEY POINTS\n`
+    appState.textPoints
+      .filter((point) => point.trim())
+      .forEach((point, index) => {
+        documentContent += `${index + 1}. ${point}\n`
+      })
+    documentContent += "\n"
+
+    // Add sections with their images
+    appState.outline.forEach((section, index) => {
+      documentContent += `${section.title.toUpperCase()}\n\n`
+
+      // Add images for this section
+      const sectionImages = appState.images.filter((img) => {
+        const sectionKey = section.title.toLowerCase().replace(/[^a-z0-9]/g, "-")
+        return (
+          img.position === sectionKey ||
+          (img.position === "introduction" && section.title.toLowerCase().includes("introduction")) ||
+          (img.position === "main-content" && section.title.toLowerCase().includes("main")) ||
+          (img.position === "supporting-details" && section.title.toLowerCase().includes("supporting")) ||
+          (img.position === "conclusion" && section.title.toLowerCase().includes("conclusion"))
+        )
+      })
+
+      if (sectionImages.length > 0) {
+        documentContent += "--- Images in this section ---\n"
+        sectionImages.forEach((img) => {
+          documentContent += `IMAGE:${img.id}:${img.file.name}:${img.description || "No description provided"}\n`
+        })
+        documentContent += "\n"
+      }
+
+      documentContent += `${section.content}\n\n`
+      documentContent += `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\n`
+    })
+
+    // Add bottom images
+    const bottomImages = appState.images.filter((img) => img.position === "bottom")
+    if (bottomImages.length > 0) {
+      documentContent += "=== ADDITIONAL IMAGES ===\n"
+      bottomImages.forEach((img) => {
+        documentContent += `IMAGE:${img.id}:${img.file.name}:${img.description || "No description"}\n`
+      })
+      documentContent += "\n"
+    }
+
+    documentContent += `CONCLUSION\n\nThis document provides a comprehensive overview of the ${appState.documentType} requirements and specifications. All sections have been carefully structured to ensure clarity and professional presentation.\n\n`
+    documentContent += `---\nDocument generated by Docgent AI on ${new Date().toLocaleDateString()}\nProfessional Document Generation Platform`
+
+    return documentContent
+  }
+
   useEffect(() => {
     // Simulate document generation
     setTimeout(() => {
-      const generateDocumentWithImages = () => {
-        let documentContent = `${appState.documentType?.replace("-", " ").toUpperCase()} DOCUMENT\n\n`
-
-        // Add top images
-        const topImages = appState.images.filter((img) => img.position === "top")
-        if (topImages.length > 0) {
-          documentContent += "=== IMAGES ===\n"
-          topImages.forEach((img) => {
-            documentContent += `IMAGE:${img.id}:${img.file.name}:${img.description || "No description"}\n`
-          })
-          documentContent += "\n"
-        }
-
-        documentContent += `EXECUTIVE SUMMARY\n${appState.basicIdea}\n\n`
-
-        documentContent += `KEY POINTS\n`
-        appState.textPoints
-          .filter((point) => point.trim())
-          .forEach((point, index) => {
-            documentContent += `${index + 1}. ${point}\n`
-          })
-        documentContent += "\n"
-
-        // Add sections with their images
-        appState.outline.forEach((section, index) => {
-          documentContent += `${section.title.toUpperCase()}\n\n`
-
-          // Add images for this section
-          const sectionImages = appState.images.filter((img) => {
-            const sectionKey = section.title.toLowerCase().replace(/[^a-z0-9]/g, "-")
-            return (
-              img.position === sectionKey ||
-              (img.position === "introduction" && section.title.toLowerCase().includes("introduction")) ||
-              (img.position === "main-content" && section.title.toLowerCase().includes("main")) ||
-              (img.position === "supporting-details" && section.title.toLowerCase().includes("supporting")) ||
-              (img.position === "conclusion" && section.title.toLowerCase().includes("conclusion"))
-            )
-          })
-
-          if (sectionImages.length > 0) {
-            documentContent += "--- Images in this section ---\n"
-            sectionImages.forEach((img) => {
-              documentContent += `IMAGE:${img.id}:${img.file.name}:${img.description || "No description provided"}\n`
-            })
-            documentContent += "\n"
-          }
-
-          documentContent += `${section.content}\n\n`
-          documentContent += `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\n`
-        })
-
-        // Add bottom images
-        const bottomImages = appState.images.filter((img) => img.position === "bottom")
-        if (bottomImages.length > 0) {
-          documentContent += "=== ADDITIONAL IMAGES ===\n"
-          bottomImages.forEach((img) => {
-            documentContent += `IMAGE:${img.id}:${img.file.name}:${img.description || "No description"}\n`
-          })
-          documentContent += "\n"
-        }
-
-        documentContent += `CONCLUSION\n\nThis document provides a comprehensive overview of the ${appState.documentType} requirements and specifications. All sections have been carefully structured to ensure clarity and professional presentation.\n\n`
-        documentContent += `---\nDocument generated by Docgent AI on ${new Date().toLocaleDateString()}\nProfessional Document Generation Platform`
-
-        return documentContent
-      }
-
-      const mockDocument = generateDocumentWithImages()
+      const mockDocument = generateDocumentWithTemplate()
       updateAppState({ finalDocument: mockDocument })
       setIsGenerating(false)
     }, 3000)
   }, [appState, updateAppState])
 
-  const sendMessage = () => {
+  // Process chatbot response and update document
+  const processChatbotResponse = (response: string) => {
+    const lines = response.trim().split("\n")
+    const firstLine = lines[0].toLowerCase()
+
+    if (firstLine === "update" && lines.length >= 3) {
+      // Extract heading and content
+      const heading = lines[1].trim()
+      const updatedContent = lines.slice(2).join("\n").trim()
+
+      // Update the document
+      if (appState.finalDocument) {
+        const documentLines = appState.finalDocument.split("\n")
+        let updatedDocument = ""
+        let inTargetSection = false
+        let sectionFound = false
+
+        for (let i = 0; i < documentLines.length; i++) {
+          const line = documentLines[i]
+
+          // Check if this line matches the heading we want to update
+          if (
+            line.toUpperCase().includes(heading.toUpperCase()) &&
+            (line === heading.toUpperCase() || line.includes(heading.toUpperCase()))
+          ) {
+            updatedDocument += line + "\n"
+            inTargetSection = true
+            sectionFound = true
+
+            // Skip the old content until we reach the next section
+            i++
+            while (
+              i < documentLines.length &&
+              !documentLines[i].match(/^[A-Z\s]+$/) &&
+              !documentLines[i].includes("===") &&
+              !documentLines[i].includes("---") &&
+              documentLines[i].trim() !== ""
+            ) {
+              i++
+            }
+
+            // Add the new content
+            updatedDocument += "\n" + updatedContent + "\n\n"
+
+            // Add the current line (which should be the start of next section or empty)
+            if (i < documentLines.length) {
+              updatedDocument += documentLines[i] + "\n"
+            }
+            inTargetSection = false
+          } else {
+            updatedDocument += line + "\n"
+          }
+        }
+
+        if (sectionFound) {
+          updateAppState({ finalDocument: updatedDocument })
+
+          // Add confirmation message
+          const confirmationMessage: ChatMessage = {
+            id: (Date.now() + 2).toString(),
+            type: "ai",
+            content: `✅ Successfully updated the "${heading}" section of your document!`,
+            timestamp: new Date(),
+          }
+          setChatMessages((prev) => [...prev, confirmationMessage])
+        } else {
+          // Section not found, add error message
+          const errorMessage: ChatMessage = {
+            id: (Date.now() + 2).toString(),
+            type: "ai",
+            content: `❌ Could not find the "${heading}" section in your document. Please check the section name and try again.`,
+            timestamp: new Date(),
+          }
+          setChatMessages((prev) => [...prev, errorMessage])
+        }
+      }
+    } else if (firstLine === "general") {
+      // Handle general response - just display the AI response
+      const generalResponse = lines.slice(1).join("\n").trim() || response
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: "ai",
+        content: generalResponse,
+        timestamp: new Date(),
+      }
+      setChatMessages((prev) => [...prev, aiMessage])
+    } else {
+      // Fallback - treat as general response
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: "ai",
+        content: response,
+        timestamp: new Date(),
+      }
+      setChatMessages((prev) => [...prev, aiMessage])
+    }
+  }
+
+  const sendMessage = async () => {
     if (!chatInput.trim()) return
 
     const userMessage: ChatMessage = {
@@ -165,16 +438,20 @@ export default function GenerationStep({ onPrev, appState, updateAppState }: Gen
     setChatMessages((prev) => [...prev, userMessage])
     setChatInput("")
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage: ChatMessage = {
+    try {
+      const res = await sendChatMessage(chatInput, appState.finalDocument!, appState.basicIdea)
+      
+      processChatbotResponse(res)
+    } catch (error) {
+      console.error("Error sending message:", error)
+      const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: "ai",
-        content: "I understand your request. Let me help you make those changes to your document.",
+        content: "Sorry, I encountered an error. Please try again.",
         timestamp: new Date(),
       }
-      setChatMessages((prev) => [...prev, aiMessage])
-    }, 1000)
+      setChatMessages((prev) => [...prev, errorMessage])
+    }
   }
 
   const downloadDocument = () => {
