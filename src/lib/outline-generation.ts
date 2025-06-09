@@ -30,7 +30,7 @@ export async function generateOutlineServerAction({
 - 3-6 sections only
 - Titles: no "Section 1" prefixes,actionable
 - Content: word descriptions
-- Dont add  Cover Page and table of content section you are required to add important topic related to topic
+- Dont add  Cover Page,appendix and table of content section  you are required to add important topic related to topic
 
 ### EXAMPLE OUTPUTS:
 Invoice:
@@ -40,6 +40,8 @@ Assignment:
 [{"id":"1","title":"Research Question","content":"States the core problem"},{"id":"2","title":"Methodology","content":"Explains research approach"}]
 
 NOW GENERATE FOR: ${documentType} about "${basicIdea}"`;
+
+
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.0-flash',

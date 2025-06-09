@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import WelcomeStep from "@/components/WelcomeStep"
 import ContentStep from "@/components/ContentStep"
@@ -42,6 +42,8 @@ export default function Home() {
       setCurrentStep(currentStep - 1)
     }
   }
+
+  
 
   const updateAppState = (updates: Partial<AppState>) => {
     setAppState((prev) => ({ ...prev, ...updates }))

@@ -163,7 +163,7 @@ export default function ContentStep({ onNext, onPrev, appState, updateAppState }
     if (currentArray.length > 1) {
       updateDocumentData(
         field,
-        currentArray.filter((_, i) => i !== index),
+        currentArray.filter((_:any, i:any) => i !== index),
       )
     }
   }

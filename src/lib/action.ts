@@ -22,7 +22,7 @@ Instructions:
 
 Always analyze the user query carefully and decide whether it needs the document to be changed or if it's just a general question.
 
-Do NOT add anything else except "update" or "general" followed by the updated document if applicable.only 1 heading at a time if user sends more headings
+Do NOT add anything else except "update" or "general" followed by the updated document if applicable.only 1 heading at a time if user sends more headings write as a single paragraph and dont give extra headings or stuff
 `
 
 const messages:ChatCompletionMessageParam[]= [
@@ -60,7 +60,7 @@ async function getGroqChatCompletion() {
   return groq.chat.completions.create({
     messages:messages,
     model: "llama-3.3-70b-versatile",
-    max_tokens: 100,
-    temperature: 0.5,
+    max_tokens: 1000,
+    temperature: 0.7,
   });
 }
