@@ -1,7 +1,7 @@
 export interface DocumentTemplate {
   id: string
   name: string
-  type: "assignment" | "report" | "proposal"
+  type: "assignment" | "report" | "invoice" | "word"
   header: string
   footer: string
   styles: string

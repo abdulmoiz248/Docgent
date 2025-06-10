@@ -71,7 +71,7 @@ export default function Home() {
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
         {/* Enhanced Header */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-          <h1 className="text-5xl md:text-7xl font-bold text-gradient mb-4 tracking-tight">Docgent</h1>
+          <h1 className="text-5xl md:text-7xl font-bold text-gradient mb-4 py-3 tracking-tight">Docgent</h1>
           <p className="text-slate-400 text-xl font-light tracking-wide">AI-Powered Document Generation Platform</p>
           <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-4 rounded-full" />
         </motion.div>

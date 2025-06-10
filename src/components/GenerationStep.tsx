@@ -42,7 +42,7 @@ export default function GenerationStep({ onPrev, appState, updateAppState }: Gen
     let documentContent = template.header
 
     // Add main topic
-    const mainTopic = appState.documentData?.topic || appState.basicIdea || "the assigned topic"
+    const mainTopic = appState.documentData?.topic +" "+ appState.basicIdea + " "+appState.textPoints
 
     // Add executive summary
     documentContent += `<div class="content-section"><h2>EXECUTIVE SUMMARY</h2>\n<div class="editable" data-section="executive-summary">This ${appState.documentType} explores ${mainTopic}, providing comprehensive analysis and insights into this important subject matter.</div></div>\n\n`
@@ -83,19 +83,6 @@ export default function GenerationStep({ onPrev, appState, updateAppState }: Gen
 
     setGenerationProgress(90)
     setGenerationStatus("Finalizing document...")
-
-    // Add conclusion
-    documentContent += `<div class="content-section"><h2>CONCLUSION</h2>\n<div class="editable" data-section="conclusion">`
-    if (appState.documentType === "assignment") {
-      documentContent += `This assignment has provided a comprehensive analysis of ${mainTopic}. Through detailed examination and critical evaluation, key insights have been developed that contribute to a deeper understanding of the subject matter.`
-    } else if (appState.documentType === "report") {
-      documentContent += `This report presents comprehensive findings and actionable recommendations regarding ${mainTopic}. The analysis conducted provides stakeholders with the necessary information for informed decision-making.`
-    } else {
-      documentContent += `This document provides a thorough examination of ${mainTopic}, presenting well-researched insights and professional analysis.`
-    }
-    documentContent += `</div></div>\n\n`
-
-    documentContent += template.footer
 
     setGenerationProgress(100)
     return documentContent

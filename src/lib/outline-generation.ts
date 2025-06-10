@@ -19,60 +19,60 @@ export async function generateOutlineServerAction({
   images: { position: string }[]
 }) {
 
+
 const prompt = `You are a professional document architect. Given the document type: "${documentType}" and the central concept: "${basicIdea}", generate a structured outline in **PURE JSON format** (no extra explanations, no markdown, no wrapping text).
 
 ### 🔒 OUTPUT FORMAT (STRICTLY REQUIRED):
 Output should be a JSON array like this:
 [
-  {"id":"1","title":"Section Title","content":"Brief explanation of what this section should include or discuss"}
+  {"id":"1","title":"Section Title","content":"Exactly what should be written in this section, in specific terms"}
 ]
 
-### 📌 GENERAL RULES
-- DO NOT include "Section 1", "Step A", or numbering in the title.
-- Title should be meaningful and specific (e.g., "Background Study" not "Section 1").
-- Content must describe what the section should contain (purpose, expected writing, scope).
-- The output should include **3 to 6 sections only.**
-- Do **not** include boilerplate sections like Cover Page, Appendix, or TOC unless essential.
-- Ensure each section contributes meaningfully to the document's purpose.
+### 📌 OUTPUT RULES (STRICT ENFORCEMENT):
+- Do NOT write "Section 1", "Step A", or any kind of numbering in the title.
+- Titles must be **descriptive, original, and specific to the document and topic**.
+- Content must describe what **must actually be written** in this section, with examples or expected ideas.
+- Avoid placeholder content like "write introduction here"; instead, explain **what kind of introduction**, what **key points** to address, and **how it connects** to the rest.
+- Output **must include 6 to 10 sections** only.
+- DO NOT include Cover Page, TOC, Appendix, or other boilerplate sections unless absolutely essential to the type and topic.
 
 ### 📄 DOCUMENT TYPE-SPECIFIC RULES:
 
 **INVOICE**
-- Must include: vendor and client details, line items, calculations (subtotal, tax, total), payment terms.
+- Include specific invoice sections: vendor/client info, detailed line items, pricing breakdown, and clear payment instructions.
 
 **WORD DOC**
-- Typical sections: Title Page, Executive Summary, Body Content (with headings), and optional Appendices.
+- May include: Title Page (with what info), Executive Summary (what should it summarize), Main Body (with sub-topics), Conclusion or Action Plan.
+- Focus each section around a real function. No fluff.
 
 **ASSIGNMENT**
-- Must include: Introduction (background), Research (literature/methods), Analysis (interpretation), Conclusion (key takeaways).
-- Prefer real content over placeholders.
-- Include what each section should *actually contain*, not just labels.
+- Must include: Introduction (set context, define terms), Research (citations, sources, previous work), Analysis (personal findings, data, interpretation), Conclusion (summarize with impact).
+- Specify what should be written under each section **specific to the topic**.
 
 **REPORT**
-- Should include: Executive Summary (1-paragraph summary), Background, Findings (evidence/data), Discussion, Recommendations.
+- Include: Executive Summary (1 paragraph summary), Background (context + problem), Findings (actual data or evidence), Discussion (interpretations, implications), Recommendations (next steps).
 
-### ✅ EXAMPLE OUTPUTS
+### ✅ EXAMPLES
 
-Assignment (about Climate Change):
+Assignment on Climate Change:
 [
-  {"id":"1","title":"Introduction","content":"Overview of climate change, importance, and purpose of the assignment"},
-  {"id":"2","title":"Research","content":"Literature review of past studies, sources of climate data"},
-  {"id":"3","title":"Analysis","content":"Interpreting patterns, data-driven insights"},
-  {"id":"4","title":"Conclusion","content":"Summarize insights, discuss implications, possible future actions"}
+  {"id":"1","title":"Introduction","content":"Define climate change in scientific terms, explain its urgency and why it matters globally. Introduce the scope of the assignment."},
+  {"id":"2","title":"Literature Review","content":"Summarize 3-5 credible studies on climate data trends, highlight agreements or contradictions between them."},
+  {"id":"3","title":"Data Analysis","content":"Present your own interpretation of temperature rise data over 50 years, highlight patterns or anomalies using graphs."},
+  {"id":"4","title":"Conclusion and Implications","content":"Summarize the evidence, state how it supports your thesis, and propose realistic actions for policymakers or individuals."}
 ]
 
 Invoice:
 [
-  {"id":"1","title":"Header","content":"Details of vendor and client (names, addresses, invoice number, date)"},
-  {"id":"2","title":"Line Items","content":"List of products or services, unit prices, quantities"},
-  {"id":"3","title":"Totals","content":"Subtotal, tax, discounts, and final total"},
-  {"id":"4","title":"Payment Details","content":"Bank account, payment due date, terms and conditions"}
+  {"id":"1","title":"Invoice Header","content":"List the vendor name, address, contact info, client name, invoice date, and unique invoice number."},
+  {"id":"2","title":"Billed Services","content":"Itemized list with clear service descriptions (e.g., 'Web Design – 5 pages'), quantity, unit cost, and line totals."},
+  {"id":"3","title":"Financial Summary","content":"Show subtotal, tax breakdown, discounts (if any), and final total in bold."},
+  {"id":"4","title":"Payment Terms","content":"State the payment method, bank details (if needed), due date, and penalties for late payments."}
 ]
 
 ### 🚀 INSTRUCTION
 Now generate the structured JSON outline for the following:
-Document Type: ${documentType}
-Topic: "${basicIdea}"`;
+`
 
 
 
