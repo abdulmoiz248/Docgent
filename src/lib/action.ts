@@ -1,7 +1,7 @@
 "use server"
 
 import Groq from "groq-sdk";
-
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 interface ChatCompletionMessageParam {
   role: "user" | "assistant" | "system";
@@ -17,12 +17,11 @@ Instructions:
   <heading name should be same as in doc>
   <complete updated  text of section>
 
-- If the user query is general or does NOT require any document generation or update, respond with:
-  general
+- If the user query is general or does NOT require any document generation or update, respond with the message
 
 Always analyze the user query carefully and decide whether it needs the document to be changed or if it's just a general question.
 
-Do NOT add anything else except "update" or "general" followed by the updated document if applicable.only 1 heading at a time if user sends more headings write as a single paragraph and dont give extra headings or stuff
+Do NOT add anything else except "update"  followed by the updated document if applicable.only 1 heading at a time if user sends more headings write as a single paragraph and dont give extra headings or stuff
 `
 
 const messages:ChatCompletionMessageParam[]= [
@@ -32,8 +31,8 @@ const messages:ChatCompletionMessageParam[]= [
     },
   ];
 
-  
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+
 
 export async function sendChatMessage(message: string,content:string,mainIdea:string) {
  

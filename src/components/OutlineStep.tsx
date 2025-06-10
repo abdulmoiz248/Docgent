@@ -3,7 +3,7 @@
 import { useEffect, useState,useTransition } from "react"
 import { motion } from "framer-motion"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
-import { GripVertical, Edit2, Check, X, ArrowLeft, ArrowRight, Plus } from "lucide-react"
+import { GripVertical, Edit2, Check, X, ArrowLeft, ArrowRight, Plus } from 'lucide-react'
 import type { AppState } from "@/app/page"
 import {generateOutlineServerAction} from '@/lib/outline-generation'
 
@@ -23,9 +23,9 @@ export default function OutlineStep({ onNext, onPrev, appState, updateAppState }
 
 
   useEffect(() => {
-    
- 
   const handleGenerate = async() => {
+    if (isPending) return // Prevent duplicate calls
+    
     startTransition(async () => {
       const result = await generateOutlineServerAction({
         documentType: appState.documentType!,
@@ -33,15 +33,16 @@ export default function OutlineStep({ onNext, onPrev, appState, updateAppState }
         images: appState.images,
       })
       updateAppState({ outline: result })
+      setIsGenerating(false)
     })
   }
 
-    if (appState.outline.length === 0) {
-      handleGenerate()
-    } else {
-      setIsGenerating(false)
-    }
-  }, [appState.documentType, appState.outline.length, updateAppState])
+  if (appState.outline.length === 0 && !isPending) {
+    handleGenerate()
+  } else if (appState.outline.length > 0) {
+    setIsGenerating(false)
+  }
+}, [appState.documentType, appState.outline.length, appState.basicIdea, appState.images, isPending])
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return
