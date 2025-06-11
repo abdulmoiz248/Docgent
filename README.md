@@ -15,7 +15,7 @@ Whether it's a report, assignment, word doc, or invoice — Docgent does it fast
 ## 🧵 Stack
 
 * **Frontend:** Next.js 15, Tailwind CSS
-* **AI:** Groq (LLaMA 3) + Gemini Pro
+* **AI:** Groq (LLaMA 3) + Gemini API
 * **Backend:** Server Actions (App Router)
 * **Document State:** Word
 
